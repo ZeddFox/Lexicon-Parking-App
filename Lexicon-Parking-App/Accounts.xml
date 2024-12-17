@@ -1,0 +1,12 @@
+﻿<accounts>
+  <account>
+    <id></id>
+    <username></username>
+    <password></password>
+    <firstname></firstname>
+    <lastname></lastname>
+    <car></car>
+    <balance></balance>
+    <activeperiod></activeperiod>
+  </account>
+</accounts>

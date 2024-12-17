@@ -1,0 +1,6 @@
+@Lexicon_Parking_App_HostAddress = http://localhost:5093
+
+GET {{Lexicon_Parking_App_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
