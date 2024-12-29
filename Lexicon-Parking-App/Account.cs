@@ -7,18 +7,18 @@
         public string Password { get; set; }
         public string Firstname { get; set; }
         public string Lastname { get; set; }
-        public string Car { get; set; }
+        public string Licenseplate { get; set; }
         public decimal Balance { get; set; }
         public bool ActivePeriod { get; set; }
 
         // Create new account
-        public Account(string username, string password, string firstname, string lastname, string car)
+        public Account(string username, string password, string firstname, string lastname, string licenseplate)
         {
             Username = username;
             Password = password;
             Firstname = firstname;
             Lastname = lastname;
-            Car = car;
+            Licenseplate = licenseplate;
             Balance = 0;
             ActivePeriod = false;
 
@@ -26,14 +26,14 @@
         }
 
         // Create account type from file
-        public Account(int id, string username, string password, string firstname, string lastname, string car, decimal balance, bool activeperiod)
+        public Account(int id, string username, string password, string firstname, string lastname, string licenseplate, decimal balance, bool activeperiod)
         {
             ID = id;
             Username = username;
             Password = password;
             Firstname = firstname;
             Lastname = lastname;
-            Car = car;
+            Licenseplate = licenseplate;
             Balance = balance;
             ActivePeriod = activeperiod;
         }

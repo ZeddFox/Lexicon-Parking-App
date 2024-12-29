@@ -4,11 +4,13 @@
     {
         public int AccountID { get; set; }
         public DateTime StartDate { get; set; }
+        public string Licenseplate { get; set; }
 
-        public Period(int accountid, DateTime startDate)
+        public Period(int accountid, string licenseplate, DateTime startDate)
         {
             AccountID = accountid;
             StartDate = startDate;
+            Licenseplate = licenseplate;
         }
     }
 }

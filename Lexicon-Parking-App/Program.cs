@@ -1,6 +1,8 @@
+using Lexicon_Parking_App;
+
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
@@ -12,36 +14,37 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapControllers();
 
-app.MapPost("/start", (int accountID, string licensePlate) =>
+Backend backend = new Backend();
+
+app.MapPost("/start", (int accountID, string licenseplate) =>
 {
-    return "Begin a new period";
+    return Results.Json(backend.StartPeriod(accountID, licenseplate));
 });
 
-app.MapPost("/end", (int accountID, string licensePlate) =>
+app.MapPost("/end", (int accountID, string licenseplate) =>
 {
-    return "End current period";
+    return Results.Json(backend.EndPeriod(accountID, licenseplate));
 });
 
-app.MapGet("/current", (int accountID) =>
+app.MapGet("/current", (int accountID, string licenseplate) =>
 {
-    return "Get current period";
+    return Results.Json(backend.GetSession(accountID, licenseplate));
 });
 
-app.MapPost("/register", (string username, string firstname, string lastname, string licensePlate) =>
+app.MapPost("/register", (string username, string password, string firstname, string lastname, string licenseplate) =>
 {
-    return "Register user + car";
+    return Results.Json(backend.RegisterNewUser(username, password, firstname, lastname, licenseplate));
 });
 
 app.MapGet("/accountbalance", (int accountID) =>
 {
-    return "Get balance on account";
+    return Results.Json(backend.AccountBalance(accountID));
 });
 
 app.MapGet("/accountdetails", (int accountID) =>
 {
-    return "Get all user details";
+    return Results.Json(backend.AccountDetails(accountID));
 });
 
 
