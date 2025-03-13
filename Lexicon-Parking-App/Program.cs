@@ -32,7 +32,7 @@ app.MapGet("/current", (int accountID, string licenseplate) =>
     return Results.Json(backend.GetSession(accountID, licenseplate));
 });
 
-app.MapGet("/current", (string username, string password) =>
+app.MapGet("/login", (string username, string password) =>
 {
     return Results.Json(backend.Login(username, password));
 });
