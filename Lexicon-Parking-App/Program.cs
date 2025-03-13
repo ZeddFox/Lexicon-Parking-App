@@ -32,6 +32,11 @@ app.MapGet("/current", (int accountID, string licenseplate) =>
     return Results.Json(backend.GetSession(accountID, licenseplate));
 });
 
+app.MapGet("/current", (string username, string password) =>
+{
+    return Results.Json(backend.Login(username, password));
+});
+
 app.MapPost("/register", (string username, string password, string firstname, string lastname, string licenseplate) =>
 {
     return Results.Json(backend.RegisterNewUser(username, password, firstname, lastname, licenseplate));
@@ -46,6 +51,5 @@ app.MapGet("/accountdetails", (int accountID) =>
 {
     return Results.Json(backend.AccountDetails(accountID));
 });
-
 
 app.Run();

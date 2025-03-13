@@ -106,6 +106,29 @@ namespace Lexicon_Parking_App
             }
         }
 
+        public string Login(string username, string password)
+        {
+            Account tempAccount;
+
+            try
+            {
+                tempAccount = Accounts.Find(i => i.Username == username);
+            }
+            catch
+            {
+                return "No account with that username exists.";
+            }
+
+            if (tempAccount.Username == username && tempAccount.Password == password)
+            {
+                return "Login successful.";
+            }
+            else
+            {
+                return "Password entered was incorrect";
+            }
+        }
+
         public string RegisterNewUser(string username, string password, string firstname, string lastname, string licenseplate)
         {
             Account newAccount = new Account(username, password, firstname, lastname, licenseplate);
