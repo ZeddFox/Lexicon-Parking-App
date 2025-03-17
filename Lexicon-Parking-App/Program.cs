@@ -5,6 +5,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
@@ -12,44 +20,62 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
 Backend backend = new Backend();
 
-app.MapPost("/start", (int accountID, string licenseplate) =>
+app.MapPost("/start-session", (int accountID) =>
 {
-    return Results.Json(backend.StartPeriod(accountID, licenseplate));
+    return Results.Json(backend.StartPeriod(accountID));
 });
 
-app.MapPost("/end", (int accountID, string licenseplate) =>
+app.MapPost("/end-session", (int accountID) =>
 {
-    return Results.Json(backend.EndPeriod(accountID, licenseplate));
+    return Results.Json(backend.EndPeriod(accountID));
 });
 
-app.MapGet("/current", (int accountID, string licenseplate) =>
+app.MapGet("/current-session", (int accountID) =>
 {
-    return Results.Json(backend.GetSession(accountID, licenseplate));
+    return Results.Json(backend.GetSession(accountID));
 });
 
-app.MapGet("/login", (string username, string password) =>
+app.MapGet("/previous-sessions/{userID}", (int userID) =>
+{
+    return Results.Json(backend.GetPreviousSessions(userID));
+});
+
+app.MapPost("/login", (string username, string password) =>
 {
     return Results.Json(backend.Login(username, password));
 });
 
-app.MapPost("/register", (string username, string password, string firstname, string lastname, string licenseplate) =>
+app.MapPost("/register", (User user) =>
 {
-    return Results.Json(backend.RegisterNewUser(username, password, firstname, lastname, licenseplate));
+    return Results.Json(backend.RegisterNewUser(user));
 });
 
-app.MapGet("/accountbalance", (int accountID) =>
+app.MapGet("/user-balance", (int accountID) =>
 {
     return Results.Json(backend.AccountBalance(accountID));
 });
 
-app.MapGet("/accountdetails", (int accountID) =>
+app.MapGet("/user-details", (int accountID) =>
 {
-    return Results.Json(backend.AccountDetails(accountID));
+    var toReturn = backend.AccountDetails(accountID);
+
+    if (toReturn != null)
+    {
+        return Results.Json(toReturn);
+    }
+    else
+    {
+        return Results.Json("Account not found.");
+    }
 });
 
 app.Run();
+
+backend.SaveAccountXML(backend.programPath + backend.accountsFilename);
+backend.SavePeriodsXML(backend.programPath + backend.periodsFilename);

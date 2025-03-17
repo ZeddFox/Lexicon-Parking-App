@@ -1,6 +1,6 @@
 ﻿namespace Lexicon_Parking_App
 {
-    public class Account
+    public class User
     {
         public int ID { get; set; }
         public string Username { get; set; }
@@ -12,7 +12,7 @@
         public bool ActivePeriod { get; set; }
 
         // Create new account
-        public Account(string username, string password, string firstname, string lastname, string licenseplate)
+        public User(string username, string password, string firstname, string lastname, string licenseplate)
         {
             Username = username;
             Password = password;
@@ -26,7 +26,7 @@
         }
 
         // Create account type from file
-        public Account(int id, string username, string password, string firstname, string lastname, string licenseplate, decimal balance, bool activeperiod)
+        public User(int id, string username, string password, string firstname, string lastname, string licenseplate, decimal balance, bool activeperiod)
         {
             ID = id;
             Username = username;

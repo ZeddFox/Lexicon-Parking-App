@@ -8,14 +8,14 @@ namespace Lexicon_Parking_App
 {
     public class Backend
     {
-        string programPath = "C:\\Users\\zeddf\\source\\repos\\Lexicon-Parking-App\\Lexicon-Parking-App\\";
-        string accountsFilename = "Accounts.xml";
-        string periodsFilename = "Periods.xml";
+        public string programPath = "C:\\Users\\zeddf\\source\\repos\\Lexicon-Parking-App\\Lexicon-Parking-App\\";
+        public string accountsFilename = "Accounts.xml";
+        public string periodsFilename = "Periods.xml";
 
         XDocument xDocAccounts;
         XDocument xDocPeriods;
 
-        List<Account> Accounts { get; set; }
+        List<User> Accounts { get; set; }
         List<Period> Periods { get; set; }
 
         public decimal daytimeCost = 14;
@@ -28,7 +28,7 @@ namespace Lexicon_Parking_App
             xDocAccounts = new XDocument();
             xDocPeriods = new XDocument();
 
-            Accounts = new List<Account>();
+            Accounts = new List<User>();
             Periods = new List<Period>();
 
             LoadAccountsXML(programPath + accountsFilename);
@@ -39,7 +39,7 @@ namespace Lexicon_Parking_App
         {
             // Check if a period is already active.
             // Start new period
-            foreach (Account account in Accounts)
+            foreach (User account in Accounts)
             {
                 if (account.ID == accountID && account.Licenseplate == licenseplate)
                 {
@@ -61,7 +61,7 @@ namespace Lexicon_Parking_App
         {
             // Check if a period is not active.
             // End period
-            foreach (Account account in Accounts)
+            foreach (User account in Accounts)
             {
                 if (account.ID == accountID && account.Licenseplate == licenseplate)
                 {
@@ -83,7 +83,7 @@ namespace Lexicon_Parking_App
         public string GetSession(int accountID, string licenseplate)
         {
             // Check if period is active. If it is, return date started and total cost of period
-            Account account = Accounts.Find(i => i.ID == accountID);
+            User account = Accounts.Find(i => i.ID == accountID);
             if (account != null)
             {
                 if (account.ActivePeriod)
@@ -108,7 +108,7 @@ namespace Lexicon_Parking_App
 
         public string Login(string username, string password)
         {
-            Account tempAccount;
+            User tempAccount;
 
             try
             {
@@ -131,7 +131,7 @@ namespace Lexicon_Parking_App
 
         public string RegisterNewUser(string username, string password, string firstname, string lastname, string licenseplate)
         {
-            Account newAccount = new Account(username, password, firstname, lastname, licenseplate);
+            User newAccount = new User(username, password, firstname, lastname, licenseplate);
 
             Accounts.Add(newAccount);
             return "Account added successfully";
@@ -143,12 +143,12 @@ namespace Lexicon_Parking_App
             return Accounts.Find(i => i.ID == accountID).Balance;
         }
 
-        public string AccountDetails(int accountID)
+        public User AccountDetails(int accountID)
         {
             // Get details from account by using uniqueID
-            Account account = Accounts.Find(i => i.ID == accountID);
+            User account = Accounts.Find(i => i.ID == accountID);
 
-            return $"Username: {account.Username}, Firstname: {account.Firstname}, Lastname: {account.Lastname}, Licenseplate: {account.Licenseplate}, Balance: {account.Balance}, Has active session: {account.ActivePeriod}";
+            return account;
         }
 
         public decimal CalculateCost(int accountID)
@@ -184,7 +184,7 @@ namespace Lexicon_Parking_App
         {
             var accounts = xDocAccounts.Descendants("account")
 
-                .Select(accountElement => new Account(
+                .Select(accountElement => new User(
 
                     int.Parse(accountElement.Element("id").Value),
 
@@ -227,7 +227,7 @@ namespace Lexicon_Parking_App
             Periods.AddRange(periods);
         }
 
-        void SaveAccountXML(string filePath)
+        public void SaveAccountXML(string filePath)
         {
             xDocAccounts = new XDocument(
                 new XElement("Accounts",
@@ -246,7 +246,7 @@ namespace Lexicon_Parking_App
             xDocAccounts.Save(filePath);
         }
 
-        void SavePeriodsXML(string filePath)
+        public void SavePeriodsXML(string filePath)
         {
             xDocPeriods = new XDocument(
                 new XElement("Periods",
