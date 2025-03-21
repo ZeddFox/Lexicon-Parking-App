@@ -9,156 +9,296 @@ namespace Lexicon_Parking_App
     public class Backend
     {
         public string programPath = "C:\\Users\\zeddf\\source\\repos\\Lexicon-Parking-App\\Lexicon-Parking-App\\";
-        public string accountsFilename = "Accounts.xml";
+        public string usersFilename = "Users.xml";
         public string periodsFilename = "Periods.xml";
 
-        XDocument xDocAccounts;
+        public string userPath;
+        public string periodsPath;
+
+        XDocument xDocUsers;
         XDocument xDocPeriods;
 
-        List<User> Accounts { get; set; }
+        List<User> Users { get; set; }
         List<Period> Periods { get; set; }
 
         public decimal daytimeCost = 14;
         public decimal nighttimeCost = 8;
 
         static int newID = 0;
+        static int newPeriodID = 0;
+
+        public string startPeriodMessage = "";
+        public string endPeriodMessage = "";
+        public string currentPeriodMessage = "";
+        public string previousPeriodsMessage = "";
+        public string registerMessage = "";
+        public string loginMessage = "";
+        public string userBalanceMessage = "";
+        public string userDetailsMessage = "";
 
         public Backend()
         {
-            xDocAccounts = new XDocument();
+            userPath = programPath + usersFilename;
+            periodsPath = programPath + periodsFilename;
+
+            xDocUsers = new XDocument();
             xDocPeriods = new XDocument();
 
-            Accounts = new List<User>();
+            Users = new List<User>();
             Periods = new List<Period>();
 
-            LoadAccountsXML(programPath + accountsFilename);
+            LoadUsersXML(programPath + usersFilename);
             LoadPeriodsXML(programPath + periodsFilename);
         }
 
-        public string StartPeriod(int accountID, string licenseplate)
+        public Period? StartPeriod(int userID)
         {
-            // Check if a period is already active.
-            // Start new period
-            foreach (User account in Accounts)
+            startPeriodMessage = "";
+
+            User currentUser = null;
+
+            // Find user with provided userID
+            try
             {
-                if (account.ID == accountID && account.Licenseplate == licenseplate)
+                currentUser = Users.Find(user => user.UserID == userID);
+
+                Period foundPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
+
+                if (foundPeriod != null)
                 {
-                    if (!account.ActivePeriod)
-                    {
-                        Period newPeriod = new Period(accountID, licenseplate, DateTime.Now);
-
-                        Periods.Add(newPeriod);
-
-                        account.ActivePeriod = true;
-                        return "Period Started successfully.";
-                    }
-                }
-            }
-            return "Error while starting period.";
-        }
-
-        public string EndPeriod(int accountID, string licenseplate)
-        {
-            // Check if a period is not active.
-            // End period
-            foreach (User account in Accounts)
-            {
-                if (account.ID == accountID && account.Licenseplate == licenseplate)
-                {
-                    if (account.ActivePeriod)
-                    {
-                        //End period
-                        account.Balance += CalculateCost(accountID);
-
-                        Periods.RemoveAll(i => i.AccountID == accountID && i.Licenseplate == licenseplate);
-
-                        account.ActivePeriod = false;
-                        return "Period Ended successfully.";
-                    }
-                }
-            }
-            return "Error while ending period.";
-        }
-
-        public string GetSession(int accountID, string licenseplate)
-        {
-            // Check if period is active. If it is, return date started and total cost of period
-            User account = Accounts.Find(i => i.ID == accountID);
-            if (account != null)
-            {
-                if (account.ActivePeriod)
-                {
-                    //Calculate cost of session
-                    decimal cost = CalculateCost(accountID);
-
-                    Period period = Periods.Find(i => i.AccountID == accountID && i.Licenseplate == licenseplate);
-
-                    return $"Period started {period.StartDate} and will cost {cost}kr so far.";
+                    startPeriodMessage = "Active session already exists";
+                    Console.WriteLine(startPeriodMessage);
+                    return null;
                 }
                 else
                 {
-                    return "No Active Session";
+                    Period newPeriod = new Period(userID, DateTime.Now);
+
+                    Periods.Add(newPeriod);
+                    SavePeriodsXML(periodsPath);
+
+                    startPeriodMessage = "Session started successfully";
+                    Console.WriteLine(startPeriodMessage);
+                    return newPeriod;
                 }
             }
-            else
-            {
-                return "Either account or licenseplate was not found.";
-            }
-        }
-
-        public string Login(string username, string password)
-        {
-            User tempAccount;
-
-            try
-            {
-                tempAccount = Accounts.Find(i => i.Username == username);
-            }
+            // If user is not found, return message
             catch
             {
-                return "No account with that username exists.";
+                startPeriodMessage = "User does not exist.";
+                Console.WriteLine(startPeriodMessage);
+                return null;
             }
+            startPeriodMessage = "Error while starting period.";
+            Console.WriteLine(startPeriodMessage);
+            return null;
+        }
+        public Period? EndPeriod(int userID)
+        {
+            endPeriodMessage = "";
 
-            if (tempAccount.Username == username && tempAccount.Password == password)
+            User currentUser = null;
+
+            // Find user with provided userID
+            try
             {
-                return "Login successful.";
+                currentUser = Users.Find(user => user.UserID == userID);
+
+                // Find active period connected to userID
+                Period currentPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
+
+                if (currentPeriod == null)
+                {
+                    endPeriodMessage = "No active session found";
+                    Console.WriteLine(endPeriodMessage);
+                    return null;
+                }
+                else
+                {
+                    currentPeriod.Stop();
+                    currentUser.Balance += CalculateCost(currentPeriod);
+
+                    endPeriodMessage = "Session ended successfully";
+                    Console.WriteLine(endPeriodMessage);
+                    return currentPeriod;
+                }
+            }
+            // If user is not found, return message
+            catch
+            {
+                endPeriodMessage = "User does not exist.";
+                Console.WriteLine(endPeriodMessage);
+                return null;
+            }
+            endPeriodMessage = "Error while stopping period.";
+            Console.WriteLine(endPeriodMessage);
+            return null;
+        }
+        public Period? GetSession(int userID)
+        {
+            currentPeriodMessage = "";
+            User? tempUser = Users.Find(item => item.UserID == userID);
+
+            if (tempUser == null)
+            {
+                currentPeriodMessage = $"No user with id: {userID} was found.";
+                Console.WriteLine(currentPeriodMessage);
+                return null;
             }
             else
             {
-                return "Password entered was incorrect";
+                Period? currentPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
+
+                if (currentPeriod == null)
+                {
+                    currentPeriodMessage = $"No period found for {tempUser.Firstname + " " + tempUser.Lastname}";
+                    Console.WriteLine(currentPeriodMessage);
+                    return null;
+                }
+                else
+                {
+                    currentPeriodMessage = "Period obtained successfully";
+                    Console.WriteLine(currentPeriodMessage);
+                    return currentPeriod;
+                }
             }
         }
-
-        public string RegisterNewUser(string username, string password, string firstname, string lastname, string licenseplate)
+        public List<Period>? GetPreviousSessions(int userID)
         {
-            User newAccount = new User(username, password, firstname, lastname, licenseplate);
+            previousPeriodsMessage = "";
 
-            Accounts.Add(newAccount);
-            return "Account added successfully";
+            User currentUser = null;
+
+            // Find user with provided userID
+            try
+            {
+                currentUser = Users.Find(user => user.UserID == userID);
+
+                // Find active periods connected to userID
+                try
+                {
+                    List<Period>? previousPeriods = Periods.Where(period => period.UserID == userID && period.EndTime != null).ToList();
+
+                    previousPeriodsMessage = "Sessions listed successfully";
+                    Console.WriteLine(previousPeriodsMessage);
+                    return previousPeriods;
+                }
+                // If periods not found, return message
+                catch
+                {
+                    previousPeriodsMessage = "No sessions found";
+                    Console.WriteLine(previousPeriodsMessage);
+                    return null;
+                }
+            }
+            // If user is not found, return message
+            catch
+            {
+                previousPeriodsMessage = "User does not exist.";
+                Console.WriteLine(previousPeriodsMessage);
+                return null;
+            }
+            previousPeriodsMessage = "Error while stopping period.";
+            Console.WriteLine(previousPeriodsMessage);
+            return null;
         }
+        public User? Login(string username, string password)
+        {
+            loginMessage = "";
 
-        public decimal AccountBalance(int accountID)
+            User tempUser = Users.Find(i => i.Username == username);
+
+            if (tempUser == null)
+            {
+                loginMessage = "User not found";
+                Console.WriteLine(loginMessage);
+                return null;
+            }
+            else
+            {
+                if (tempUser.Password != password)
+                {
+                    loginMessage = "Incorrect password";
+                    Console.WriteLine(loginMessage);
+                    return null;
+                }
+                else
+                {
+                    loginMessage = "Login successful";
+                    Console.WriteLine(loginMessage);
+                    return tempUser;
+                }
+            }
+
+        }
+        public bool RegisterNewUser(User? user)
+        {
+            registerMessage = "";
+
+            if (user == null || string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Password) || string.IsNullOrEmpty(user.Licenseplate))
+            {
+                registerMessage = "Invalid data";
+                Console.WriteLine(registerMessage);
+                return false;
+            }
+            else
+            {
+                User newUser = Users.Find(i => i.Username == user.Username);
+
+                if (newUser != null)
+                {
+                    registerMessage = "User with that username already exists";
+                    Console.WriteLine(registerMessage);
+                    return false;
+                }
+                else
+                {
+                    newUser = new User();
+
+                    newUser.Username = user.Username;
+                    newUser.Password = user.Password;
+                    newUser.Firstname = user.Firstname;
+                    newUser.Lastname = user.Lastname;
+                    newUser.Licenseplate = user.Licenseplate;
+
+                    Users.Add(newUser);
+                    SaveUsersXML(userPath);
+
+                    registerMessage = "User registered successfully";
+                    Console.WriteLine(registerMessage);
+
+                    return true;
+                }
+            }
+        }
+        public decimal? UserBalance(int userID)
         {
             // Get balance from account by using uniqueID
-            return Accounts.Find(i => i.ID == accountID).Balance;
+            return Users.Find(i => i.UserID == userID).Balance;
         }
-
-        public User AccountDetails(int accountID)
+        public User? UserDetails(int userID)
         {
             // Get details from account by using uniqueID
-            User account = Accounts.Find(i => i.ID == accountID);
+            User user = Users.Find(i => i.UserID == userID);
 
-            return account;
+            return user;
         }
 
-        public decimal CalculateCost(int accountID)
+        decimal CalculateCost(Period period)
         {
             decimal cost = 0;
+            DateTime? stopDate;
 
-            Period period = Periods.Find(i => i.AccountID == accountID);
-            DateTime stopDate = DateTime.Now;
+            if (period.EndTime == null)
+            {
+                stopDate = DateTime.Now;
+            }
+            else
+            {
+                stopDate = period.EndTime;
+            }
 
-            DateTime currentTime = period.StartDate;
+            DateTime currentTime = period.StartTime;
 
             while (currentTime < stopDate)
             {
@@ -180,89 +320,96 @@ namespace Lexicon_Parking_App
                 return cost;
         }
 
-        void LoadAccountsXML(string filePath)
+        void LoadUsersXML(string filePath)
         {
-            var accounts = xDocAccounts.Descendants("account")
+            var users = xDocUsers.Descendants("user")
 
-                .Select(accountElement => new User(
+                .Select(userElement => new User(
 
-                    int.Parse(accountElement.Element("id").Value),
-
-                    accountElement.Element("username").Value,
-                    accountElement.Element("password").Value,
-                    accountElement.Element("firstname").Value,
-                    accountElement.Element("lastname").Value,
-                    accountElement.Element("licenseplate").Value,
-
-                    decimal.Parse(accountElement.Element("balance").Value),
-                    bool.Parse(accountElement.Element("activesession").Value)
+                    int.Parse(userElement.Element("userid").Value),
+                    userElement.Element("username").Value,
+                    userElement.Element("password").Value,
+                    userElement.Element("firstname").Value,
+                    userElement.Element("lastname").Value,
+                    userElement.Element("licenseplate").Value,
+                    decimal.Parse(userElement.Element("balance").Value)
 
                     )).ToList();
 
-            Accounts.AddRange(accounts);
+            Users.AddRange(users);
 
-            foreach (var account in Accounts)
+            foreach (var user in Users)
             {
-                if (account.ID > newID)
+                if (user.UserID > newID)
                 {
-                    newID = account.ID;
+                    newID = user.UserID;
                 }
             }
-        }
 
+            Console.WriteLine("Successfully loaded Users");
+        }
         void LoadPeriodsXML(string filePath)
         {
-            var periods = xDocAccounts.Descendants("period")
+            var periods = xDocUsers.Descendants("period")
 
             .Select(periodElement => new Period(
 
-                int.Parse(periodElement.Element("accountid").Value),
-
-                (periodElement.Element("licenseplate").Value),
-
-                DateTime.Parse(periodElement.Element("username").Value)
-
+                int.Parse(periodElement.Element("periodid").Value),
+                int.Parse(periodElement.Element("userid").Value),
+                DateTime.Parse(periodElement.Element("starttime").Value),
+                DateTime.Parse(periodElement.Element("endtime").Value),
+                decimal.Parse(periodElement.Element("cost").Value)
                 )).ToList();
 
             Periods.AddRange(periods);
+            Console.WriteLine("Successfully loaded Periods");
         }
 
-        public void SaveAccountXML(string filePath)
+        public void SaveUsersXML(string filePath)
         {
-            xDocAccounts = new XDocument(
-                new XElement("Accounts",
-                    Accounts.Select(account =>
-                        new XElement("account",
-                            new XElement("id", account.ID),
-                            new XElement("username", account.Username),
-                            new XElement("password", account.Password),
-                            new XElement("firstname", account.Firstname),
-                            new XElement("lastname", account.Lastname),
-                            new XElement("licenseplate", account.Licenseplate),
-                            new XElement("balance", account.Balance),
-                            new XElement("activeperiod", account.ActivePeriod)
+            xDocUsers = new XDocument(
+                new XElement("users",
+                    Users.Select(user =>
+                        new XElement("user",
+                            new XElement("userid", user.UserID),
+                            new XElement("username", user.Username),
+                            new XElement("password", user.Password),
+                            new XElement("firstname", user.Firstname),
+                            new XElement("lastname", user.Lastname),
+                            new XElement("licenseplate", user.Licenseplate),
+                            new XElement("balance", user.Balance)
             ))));
 
-            xDocAccounts.Save(filePath);
+            xDocUsers.Save(filePath);
+            Console.WriteLine("Successfully saved Users");
         }
-
         public void SavePeriodsXML(string filePath)
         {
             xDocPeriods = new XDocument(
                 new XElement("Periods",
                     Periods.Select(period =>
                         new XElement("period",
-                            new XElement("accountid", period.AccountID),
-                            new XElement("startdate", period.StartDate)
+                            new XElement("periodid", period.PeriodId),
+                            new XElement("userid", period.UserID),
+                            new XElement("starttime", period.StartTime),
+                            new XElement("endtime", period.EndTime),
+                            new XElement("cost", period.Cost)
             ))));
 
             xDocPeriods.Save(filePath);
+            Console.WriteLine("Successfully saved Periods");
         }
 
         public static int UniqueId()
         {
             newID += 1;
             return newID;
+        }
+
+        public static int UniquePeriodId()
+        {
+            newPeriodID += 1;
+            return newPeriodID;
         }
     }
 }

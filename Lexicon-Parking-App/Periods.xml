@@ -1,7 +1,17 @@
-﻿<periods>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Periods>
   <period>
-    <accountid></accountid>
-    <licenseplate></licenseplate>
-    <timestarted></timestarted>
+    <periodid>1</periodid>
+    <userid>2</userid>
+    <starttime>2025-03-21T13:20:45.3131471+01:00</starttime>
+    <endtime>2025-03-21T13:21:11.6238356+01:00</endtime>
+    <cost>0</cost>
   </period>
-</periods>
+  <period>
+    <periodid>2</periodid>
+    <userid>2</userid>
+    <starttime>2025-03-21T13:31:55.5849297+01:00</starttime>
+    <endtime />
+    <cost>0</cost>
+  </period>
+</Periods>

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<users>
+  <user>
+    <userid>2</userid>
+    <username>user@mail</username>
+    <password>pass</password>
+    <firstname>firstname</firstname>
+    <lastname>lastname</lastname>
+    <licenseplate>ABC123</licenseplate>
+    <balance>0</balance>
+  </user>
+</users>

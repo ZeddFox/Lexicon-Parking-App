@@ -1,6 +1,13 @@
 using Lexicon_Parking_App;
+using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration.UserSecrets;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<PersistanceContext>(options =>
+    options.UseSqlite("DataSource=persistance.db"));
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddAuthorization();
 builder.Services.AddSwaggerGen();
@@ -26,56 +33,184 @@ app.UseAuthorization();
 
 Backend backend = new Backend();
 
-app.MapPost("/start-session", (int accountID) =>
+app.MapPost("/start-session", (User user) =>
 {
-    return Results.Json(backend.StartPeriod(accountID));
+
+    Console.WriteLine("start session was reached");
+
+    try
+    {
+        Period? activatedPeriod = backend.StartPeriod(user.UserID);
+
+        if (activatedPeriod == null)
+        {
+            return Results.Conflict(new
+            {
+                message = backend.startPeriodMessage
+            });
+        }
+        else
+        {
+            return Results.Ok(new
+            {
+                message = backend.startPeriodMessage,
+                startTime = activatedPeriod.StartTime
+            });
+        }
+    }
+    catch
+    {
+        return Results.BadRequest(new
+        {
+            message = "userID was invalid"
+        });
+    }
 });
 
-app.MapPost("/end-session", (int accountID) =>
+app.MapPost("/end-session", async (HttpRequest request) =>
 {
-    return Results.Json(backend.EndPeriod(accountID));
+    var body = new StreamReader(request.Body);
+    string postData = await body.ReadToEndAsync();
+    int userID = int.Parse(postData);
+
+    Console.WriteLine("end session was reached");
+
+    try
+    {
+        Period endedPeriod = backend.EndPeriod(userID);
+
+        if (endedPeriod == null)
+        {
+            return Results.Conflict(new
+            {
+                message = backend.endPeriodMessage
+            });
+        }
+        else
+        {
+            return Results.Ok(new
+            {
+                message = backend.endPeriodMessage,
+            });
+        }
+    }
+    catch
+    {
+        return Results.BadRequest(new
+        {
+            message = "userID was invalid"
+        });
+    }
 });
 
-app.MapGet("/current-session", (int accountID) =>
+app.MapGet("/current-session", (int userID) =>
 {
-    return Results.Json(backend.GetSession(accountID));
+    Period? currentPeriod = backend.GetSession(userID);
+
+    if(currentPeriod == null)
+    {
+        return Results.Conflict(new
+        {
+            message = backend.currentPeriodMessage,
+            isActive = false
+        });
+    }
+    else
+    {
+        Console.WriteLine(backend.currentPeriodMessage);
+        Console.WriteLine(currentPeriod.StartTime);
+        Console.WriteLine(currentPeriod.Cost);
+
+        return Results.Ok(new
+        {
+            message = backend.currentPeriodMessage,
+            startTime = currentPeriod.StartTime,
+            cost = currentPeriod.Cost,
+            isActive = true
+        });
+    }
 });
 
 app.MapGet("/previous-sessions/{userID}", (int userID) =>
 {
-    return Results.Json(backend.GetPreviousSessions(userID));
-});
+    List<Period>? previousPeriods = backend.GetPreviousSessions(userID);
 
-app.MapPost("/login", (string username, string password) =>
-{
-    return Results.Json(backend.Login(username, password));
-});
-
-app.MapPost("/register", (User user) =>
-{
-    return Results.Json(backend.RegisterNewUser(user));
-});
-
-app.MapGet("/user-balance", (int accountID) =>
-{
-    return Results.Json(backend.AccountBalance(accountID));
-});
-
-app.MapGet("/user-details", (int accountID) =>
-{
-    var toReturn = backend.AccountDetails(accountID);
-
-    if (toReturn != null)
+    return Results.Ok(new
     {
-        return Results.Json(toReturn);
+        message = $"The previous session for {userID}",
+        previousSession = previousPeriods,
+    });
+});
+
+app.MapPost("/login", (LoginData loginData) =>
+{
+    User user = backend.Login(loginData.Username, loginData.Password);
+
+    if (user != null)
+    {
+        return Results.Ok(new
+        {
+            message = backend.loginMessage,
+            user = user
+        });
     }
     else
     {
-        return Results.Json("Account not found.");
+        return Results.BadRequest(new
+        {
+            message = backend.loginMessage
+        });
     }
 });
 
-app.Run();
+app.MapPost("/register-user", (User user) =>
+{
+    bool successful = backend.RegisterNewUser(user);
 
-backend.SaveAccountXML(backend.programPath + backend.accountsFilename);
-backend.SavePeriodsXML(backend.programPath + backend.periodsFilename);
+    if (successful)
+    {
+        return Results.Ok(new
+        {
+            message = backend.registerMessage
+        });
+    }
+    else
+    {
+        return Results.Conflict(new
+        {
+            message = backend.registerMessage
+        });
+    }
+});
+
+app.MapGet("/user-balance", (int userID) =>
+{
+    return Results.Json(backend.UserBalance(userID));
+});
+
+app.MapGet("/user-details", (int userID) =>
+{
+    User user = backend.UserDetails(userID);
+
+    if (user != null)
+    {
+        return Results.Ok(new
+        {
+            message = "User details retrieved successfully",
+            fullname = user.Firstname + " " + user.Lastname,
+            licenseplate = user.Licenseplate,
+            balance = user.Balance
+        });
+    }
+    else
+    {
+        return Results.BadRequest(new
+        {
+            message = "User not found."
+        });
+    }
+});
+
+
+
+app.Run();

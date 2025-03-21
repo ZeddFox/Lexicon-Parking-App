@@ -1,41 +1,33 @@
-﻿namespace Lexicon_Parking_App
+﻿using Microsoft.Extensions.Configuration.UserSecrets;
+
+namespace Lexicon_Parking_App
 {
     public class User
     {
-        public int ID { get; set; }
+        public int UserID { get; set; } = 0;
         public string Username { get; set; }
         public string Password { get; set; }
         public string Firstname { get; set; }
         public string Lastname { get; set; }
         public string Licenseplate { get; set; }
-        public decimal Balance { get; set; }
-        public bool ActivePeriod { get; set; }
+        public decimal Balance { get; set; } = 0m;
 
-        // Create new account
-        public User(string username, string password, string firstname, string lastname, string licenseplate)
+        // Create new user
+        public User()
         {
-            Username = username;
-            Password = password;
-            Firstname = firstname;
-            Lastname = lastname;
-            Licenseplate = licenseplate;
-            Balance = 0;
-            ActivePeriod = false;
-
-            ID = Backend.UniqueId();
+            UserID = Backend.UniqueId();
         }
 
-        // Create account type from file
-        public User(int id, string username, string password, string firstname, string lastname, string licenseplate, decimal balance, bool activeperiod)
+        // Load User from XML
+        public User(int userid, string username, string password, string firstname, string lastname, string licenseplate, decimal balance)
         {
-            ID = id;
+            UserID = userid;
             Username = username;
             Password = password;
-            Firstname = firstname;
+            Firstname = firstname; 
             Lastname = lastname;
             Licenseplate = licenseplate;
             Balance = balance;
-            ActivePeriod = activeperiod;
         }
     }
 }
