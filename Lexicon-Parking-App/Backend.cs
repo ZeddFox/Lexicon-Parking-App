@@ -284,7 +284,7 @@ namespace Lexicon_Parking_App
             return user;
         }
 
-        decimal CalculateCost(Period period)
+        public decimal CalculateCost(Period period)
         {
             decimal cost = 0;
             DateTime? stopDate;

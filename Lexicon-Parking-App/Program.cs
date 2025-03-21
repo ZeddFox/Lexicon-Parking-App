@@ -33,14 +33,17 @@ app.UseAuthorization();
 
 Backend backend = new Backend();
 
-app.MapPost("/start-session", (User user) =>
+app.MapPost("/start-session", async (HttpRequest request) =>
 {
+    var body = new StreamReader(request.Body);
+    string postData = await body.ReadToEndAsync();
+    int userID = int.Parse(postData);
 
     Console.WriteLine("start session was reached");
 
     try
     {
-        Period? activatedPeriod = backend.StartPeriod(user.UserID);
+        Period? activatedPeriod = backend.StartPeriod(userID);
 
         if (activatedPeriod == null)
         {
@@ -117,9 +120,7 @@ app.MapGet("/current-session", (int userID) =>
     }
     else
     {
-        Console.WriteLine(backend.currentPeriodMessage);
-        Console.WriteLine(currentPeriod.StartTime);
-        Console.WriteLine(currentPeriod.Cost);
+        currentPeriod.Cost = backend.CalculateCost(currentPeriod);
 
         return Results.Ok(new
         {
