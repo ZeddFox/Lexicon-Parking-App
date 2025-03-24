@@ -55,13 +55,11 @@ namespace Lexicon_Parking_App
         {
             startPeriodMessage = "";
 
-            User currentUser = null;
-
             // Find user with provided userID
-            try
+            User? currentUser = Users.Find(user => user.UserID == userID);
+            if (currentUser != null)
             {
-                currentUser = Users.Find(user => user.UserID == userID);
-
+                // Find active period connected to userID, If period already exists, return null
                 Period foundPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
 
                 if (foundPeriod != null)
@@ -70,6 +68,7 @@ namespace Lexicon_Parking_App
                     Console.WriteLine(startPeriodMessage);
                     return null;
                 }
+                // If period does not exist, start new period then return the new period
                 else
                 {
                     Period newPeriod = new Period(userID, DateTime.Now);
@@ -82,37 +81,31 @@ namespace Lexicon_Parking_App
                     return newPeriod;
                 }
             }
-            // If user is not found, return message
-            catch
+            // If user does not exist, return null
+            else
             {
                 startPeriodMessage = "User does not exist.";
                 Console.WriteLine(startPeriodMessage);
                 return null;
             }
-            startPeriodMessage = "Error while starting period.";
-            Console.WriteLine(startPeriodMessage);
-            return null;
         }
         public Period? EndPeriod(int userID)
         {
             endPeriodMessage = "";
 
-            User currentUser = null;
-
             // Find user with provided userID
-            try
+            User? currentUser = Users.Find(user => user.UserID == userID);
+            if (currentUser != null)
             {
-                currentUser = Users.Find(user => user.UserID == userID);
-
-                // Find active period connected to userID
+                // Find active period connected to userID, If period does not exist, return null
                 Period currentPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
-
                 if (currentPeriod == null)
                 {
                     endPeriodMessage = "No active session found";
                     Console.WriteLine(endPeriodMessage);
                     return null;
                 }
+                // If period does not exist, return the new period
                 else
                 {
                     currentPeriod.Stop();
@@ -123,51 +116,52 @@ namespace Lexicon_Parking_App
                     return currentPeriod;
                 }
             }
-            // If user is not found, return message
-            catch
+            // If user does not exist, return null
+            else
             {
                 endPeriodMessage = "User does not exist.";
                 Console.WriteLine(endPeriodMessage);
                 return null;
             }
-            endPeriodMessage = "Error while stopping period.";
-            Console.WriteLine(endPeriodMessage);
-            return null;
         }
         public Period? GetSession(int userID)
         {
             currentPeriodMessage = "";
+
+            // Find user. If user exists, find period.
             User? tempUser = Users.Find(item => item.UserID == userID);
-
-            if (tempUser == null)
+            if (tempUser != null)
             {
-                currentPeriodMessage = $"No user with id: {userID} was found.";
-                Console.WriteLine(currentPeriodMessage);
-                return null;
-            }
-            else
-            {
+                // Find period. If period does not exist, return null
                 Period? currentPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
-
                 if (currentPeriod == null)
                 {
                     currentPeriodMessage = $"No period found for {tempUser.Firstname + " " + tempUser.Lastname}";
                     Console.WriteLine(currentPeriodMessage);
                     return null;
                 }
+                // If period exists, return period
                 else
                 {
                     currentPeriodMessage = "Period obtained successfully";
                     Console.WriteLine(currentPeriodMessage);
                     return currentPeriod;
                 }
+
+            }
+            // If user doesn't exist, return null
+            else
+            {
+                currentPeriodMessage = $"No user with id: {userID} was found.";
+                Console.WriteLine(currentPeriodMessage);
+                return null;
             }
         }
         public List<Period>? GetPreviousSessions(int userID)
         {
             previousPeriodsMessage = "";
 
-            User currentUser = null;
+            User? currentUser = null;
 
             // Find user with provided userID
             try
@@ -206,14 +200,15 @@ namespace Lexicon_Parking_App
         {
             loginMessage = "";
 
-            User tempUser = Users.Find(i => i.Username == username);
-
+            // Find user by username
+            User? tempUser = Users.Find(i => i.Username == username);
             if (tempUser == null)
             {
                 loginMessage = "User not found";
                 Console.WriteLine(loginMessage);
                 return null;
             }
+            // If user is found, compare their password with input password
             else
             {
                 if (tempUser.Password != password)
@@ -235,15 +230,18 @@ namespace Lexicon_Parking_App
         {
             registerMessage = "";
 
+            // Check for incorrect or missng data
             if (user == null || string.IsNullOrEmpty(user.Username) || string.IsNullOrEmpty(user.Password) || string.IsNullOrEmpty(user.Licenseplate))
             {
                 registerMessage = "Invalid data";
                 Console.WriteLine(registerMessage);
                 return false;
             }
+            // If data is correctly input, continue
             else
             {
-                User newUser = Users.Find(i => i.Username == user.Username);
+                // Check if user with same username exists
+                User? newUser = Users.Find(i => i.Username == user.Username);
 
                 if (newUser != null)
                 {
@@ -251,6 +249,7 @@ namespace Lexicon_Parking_App
                     Console.WriteLine(registerMessage);
                     return false;
                 }
+                // If user does not already exist, create new
                 else
                 {
                     newUser = new User();
@@ -273,15 +272,43 @@ namespace Lexicon_Parking_App
         }
         public decimal? UserBalance(int userID)
         {
-            // Get balance from account by using uniqueID
-            return Users.Find(i => i.UserID == userID).Balance;
+            // Find user by their userID
+            User? tempUser = Users.Find(i => i.UserID == userID);
+
+            if (tempUser != null)
+            {
+                // If user exists return balance
+                userBalanceMessage = "Balance retreived successfully.";
+                Console.WriteLine(userBalanceMessage);
+                return tempUser.Balance;
+            }
+            else
+            {
+                // If user does not exist return null
+                userBalanceMessage = "User does not exist.";
+                Console.WriteLine(userBalanceMessage);
+                return null;
+            }
         }
         public User? UserDetails(int userID)
         {
-            // Get details from account by using uniqueID
-            User user = Users.Find(i => i.UserID == userID);
+            // Find user by their userID
+            User? tempUser = Users.Find(i => i.UserID == userID);
 
-            return user;
+            if (tempUser != null)
+            {
+                // If user exists return user
+                userBalanceMessage = "Balance retreived successfully.";
+                Console.WriteLine(userBalanceMessage);
+                return tempUser;
+            }
+            else
+            {
+                // If user does not exist return null
+                userBalanceMessage = "User does not exist.";
+                Console.WriteLine(userBalanceMessage);
+                return null;
+            }
         }
 
         public decimal CalculateCost(Period period)
