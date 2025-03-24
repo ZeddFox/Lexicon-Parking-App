@@ -186,7 +186,23 @@ app.MapPost("/register-user", (User user) =>
 
 app.MapGet("/user-balance", (int userID) =>
 {
-    return Results.Json(backend.UserBalance(userID));
+    decimal? balance = backend.UserBalance(userID);
+
+    if (balance == null)
+    {
+        return Results.Conflict(new
+        {
+            message = backend.userBalanceMessage
+        });
+    }
+    else
+    {
+        return Results.Ok(new
+        {
+            message = backend.userBalanceMessage,
+            totalBalance = balance
+        });
+    }
 });
 
 app.MapGet("/user-details", (int userID) =>

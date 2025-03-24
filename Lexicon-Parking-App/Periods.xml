@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Periods>
+<periods>
   <period>
     <periodid>1</periodid>
     <userid>2</userid>
@@ -14,4 +14,4 @@
     <endtime />
     <cost>0</cost>
   </period>
-</Periods>
+</periods>

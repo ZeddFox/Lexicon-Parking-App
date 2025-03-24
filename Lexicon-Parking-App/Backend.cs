@@ -1,22 +1,18 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Principal;
-using System.Xml;
-using System.Xml.Linq;
+using System.Text.Json;
 
 namespace Lexicon_Parking_App
 {
     public class Backend
     {
         public string programPath = "C:\\Users\\zeddf\\source\\repos\\Lexicon-Parking-App\\Lexicon-Parking-App\\";
-        public string usersFilename = "Users.xml";
-        public string periodsFilename = "Periods.xml";
+        public string usersFilename = "Users.json";
+        public string periodsFilename = "Periods.json";
 
         public string userPath;
         public string periodsPath;
-
-        XDocument xDocUsers;
-        XDocument xDocPeriods;
 
         List<User> Users { get; set; }
         List<Period> Periods { get; set; }
@@ -41,14 +37,8 @@ namespace Lexicon_Parking_App
             userPath = programPath + usersFilename;
             periodsPath = programPath + periodsFilename;
 
-            xDocUsers = new XDocument();
-            xDocPeriods = new XDocument();
-
-            Users = new List<User>();
-            Periods = new List<Period>();
-
-            LoadUsersXML(programPath + usersFilename);
-            LoadPeriodsXML(programPath + periodsFilename);
+            Users = ReadUsersFromFile();
+            Periods = ReadPeriodsFromFile();
         }
 
         public Period? StartPeriod(int userID)
@@ -74,7 +64,7 @@ namespace Lexicon_Parking_App
                     Period newPeriod = new Period(userID, DateTime.Now);
 
                     Periods.Add(newPeriod);
-                    SavePeriodsXML(periodsPath);
+                    WritePeriodsToFile(Periods);
 
                     startPeriodMessage = "Session started successfully";
                     Console.WriteLine(startPeriodMessage);
@@ -110,6 +100,8 @@ namespace Lexicon_Parking_App
                 {
                     currentPeriod.Stop();
                     currentUser.Balance += CalculateCost(currentPeriod);
+
+                    WritePeriodsToFile(Periods);
 
                     endPeriodMessage = "Session ended successfully";
                     Console.WriteLine(endPeriodMessage);
@@ -240,8 +232,10 @@ namespace Lexicon_Parking_App
             // If data is correctly input, continue
             else
             {
+                User? newUser = null;
+
                 // Check if user with same username exists
-                User? newUser = Users.Find(i => i.Username == user.Username);
+                newUser = Users.Find(i => i.Username == user.Username);
 
                 if (newUser != null)
                 {
@@ -261,7 +255,7 @@ namespace Lexicon_Parking_App
                     newUser.Licenseplate = user.Licenseplate;
 
                     Users.Add(newUser);
-                    SaveUsersXML(userPath);
+                    WriteUsersToFile(Users);
 
                     registerMessage = "User registered successfully";
                     Console.WriteLine(registerMessage);
@@ -272,6 +266,8 @@ namespace Lexicon_Parking_App
         }
         public decimal? UserBalance(int userID)
         {
+            userBalanceMessage = "";
+
             // Find user by their userID
             User? tempUser = Users.Find(i => i.UserID == userID);
 
@@ -292,6 +288,8 @@ namespace Lexicon_Parking_App
         }
         public User? UserDetails(int userID)
         {
+            userDetailsMessage = "";
+
             // Find user by their userID
             User? tempUser = Users.Find(i => i.UserID == userID);
 
@@ -347,85 +345,76 @@ namespace Lexicon_Parking_App
                 return cost;
         }
 
-        void LoadUsersXML(string filePath)
+        #region JSON Functions
+        public void WriteUsersToFile(List<User> toWrite)
         {
-            var users = xDocUsers.Descendants("user")
-
-                .Select(userElement => new User(
-
-                    int.Parse(userElement.Element("userid").Value),
-                    userElement.Element("username").Value,
-                    userElement.Element("password").Value,
-                    userElement.Element("firstname").Value,
-                    userElement.Element("lastname").Value,
-                    userElement.Element("licenseplate").Value,
-                    decimal.Parse(userElement.Element("balance").Value)
-
-                    )).ToList();
-
-            Users.AddRange(users);
-
-            foreach (var user in Users)
+            try
             {
-                if (user.UserID > newID)
-                {
-                    newID = user.UserID;
-                }
+                // Convert list to JSON then write to file
+                var json = JsonSerializer.Serialize(toWrite);
+                File.WriteAllText(userPath, json);
+                Console.WriteLine("Successfully wrote users to file");
             }
-
-            Console.WriteLine("Successfully loaded Users");
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error writing users to file.");
+            }
         }
-        void LoadPeriodsXML(string filePath)
+        public void WritePeriodsToFile(List<Period> toWrite)
         {
-            var periods = xDocUsers.Descendants("period")
-
-            .Select(periodElement => new Period(
-
-                int.Parse(periodElement.Element("periodid").Value),
-                int.Parse(periodElement.Element("userid").Value),
-                DateTime.Parse(periodElement.Element("starttime").Value),
-                DateTime.Parse(periodElement.Element("endtime").Value),
-                decimal.Parse(periodElement.Element("cost").Value)
-                )).ToList();
-
-            Periods.AddRange(periods);
-            Console.WriteLine("Successfully loaded Periods");
+            try
+            {
+                // Convert list to JSON then write to file
+                var json = JsonSerializer.Serialize(toWrite);
+                File.WriteAllText(periodsPath, json);
+                Console.WriteLine("Successfully wrote periods to file");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error writing periods to file.");
+            }
         }
-
-        public void SaveUsersXML(string filePath)
+        public List<User>? ReadUsersFromFile()
         {
-            xDocUsers = new XDocument(
-                new XElement("users",
-                    Users.Select(user =>
-                        new XElement("user",
-                            new XElement("userid", user.UserID),
-                            new XElement("username", user.Username),
-                            new XElement("password", user.Password),
-                            new XElement("firstname", user.Firstname),
-                            new XElement("lastname", user.Lastname),
-                            new XElement("licenseplate", user.Licenseplate),
-                            new XElement("balance", user.Balance)
-            ))));
+            try
+            {
+                // Read all text from file
+                var json = File.ReadAllText(userPath);
+                List<User> readList = new List<User>();
 
-            xDocUsers.Save(filePath);
-            Console.WriteLine("Successfully saved Users");
+                // Convert read text to JSON then make list containing data
+                readList = JsonSerializer.Deserialize<List<User>>(json);
+                Console.WriteLine("Successfully read users from file");
+                return readList;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error writing to file.");
+                Console.WriteLine(ex);
+                return new List<User>();
+            }
         }
-        public void SavePeriodsXML(string filePath)
+        public List<Period>? ReadPeriodsFromFile()
         {
-            xDocPeriods = new XDocument(
-                new XElement("Periods",
-                    Periods.Select(period =>
-                        new XElement("period",
-                            new XElement("periodid", period.PeriodId),
-                            new XElement("userid", period.UserID),
-                            new XElement("starttime", period.StartTime),
-                            new XElement("endtime", period.EndTime),
-                            new XElement("cost", period.Cost)
-            ))));
+            try
+            {
+                // Read all text from file
+                var json = File.ReadAllText(periodsPath);
+                List<Period> readList = new List<Period>();
 
-            xDocPeriods.Save(filePath);
-            Console.WriteLine("Successfully saved Periods");
+                // Convert read text to JSON then make list containing data
+                readList = JsonSerializer.Deserialize<List<Period>>(json);
+                Console.WriteLine("Successfully read periods from file");
+                return readList;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error writing to file.");
+                Console.WriteLine(ex);
+                return new List<Period>();
+            }
         }
+        #endregion
 
         public static int UniqueId()
         {
