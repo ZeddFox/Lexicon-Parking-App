@@ -1,5 +1,6 @@
 using Lexicon_Parking_App;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration.UserSecrets;
 
@@ -33,14 +34,8 @@ app.UseAuthorization();
 
 Backend backend = new Backend();
 
-app.MapPost("/start-session", async (HttpRequest request) =>
+app.MapPost("/start-session", ([FromBody] int userID) =>
 {
-    var body = new StreamReader(request.Body);
-    string postData = await body.ReadToEndAsync();
-    int userID = int.Parse(postData);
-
-    Console.WriteLine("start session was reached");
-
     try
     {
         Period? activatedPeriod = backend.StartPeriod(userID);
@@ -70,14 +65,8 @@ app.MapPost("/start-session", async (HttpRequest request) =>
     }
 });
 
-app.MapPost("/end-session", async (HttpRequest request) =>
+app.MapPost("/end-session", ([FromBody] int userID) =>
 {
-    var body = new StreamReader(request.Body);
-    string postData = await body.ReadToEndAsync();
-    int userID = int.Parse(postData);
-
-    Console.WriteLine("end session was reached");
-
     try
     {
         Period endedPeriod = backend.EndPeriod(userID);
@@ -106,27 +95,29 @@ app.MapPost("/end-session", async (HttpRequest request) =>
     }
 });
 
-app.MapGet("/current-session", (int userID) =>
+app.MapGet("/current-session/{userID}", (int userID) =>
 {
     Period? currentPeriod = backend.GetSession(userID);
 
     if(currentPeriod == null)
     {
-        return Results.Conflict(new
+        return Results.Ok(new
         {
             message = backend.currentPeriodMessage,
+            startTime = "No active session",
+            cost = "",
             isActive = false
         });
     }
     else
     {
-        currentPeriod.Cost = backend.CalculateCost(currentPeriod);
+        currentPeriod.PeriodCost = backend.CalculateCost(currentPeriod);
 
         return Results.Ok(new
         {
             message = backend.currentPeriodMessage,
             startTime = currentPeriod.StartTime,
-            cost = currentPeriod.Cost,
+            cost = currentPeriod.PeriodCost,
             isActive = true
         });
     }
@@ -139,7 +130,7 @@ app.MapGet("/previous-sessions/{userID}", (int userID) =>
     return Results.Ok(new
     {
         message = $"The previous session for {userID}",
-        previousSession = previousPeriods,
+        previousSession = previousPeriods
     });
 });
 
@@ -184,7 +175,7 @@ app.MapPost("/register-user", (User user) =>
     }
 });
 
-app.MapGet("/user-balance", (int userID) =>
+app.MapGet("/user-balance/{userID}", (int userID) =>
 {
     decimal? balance = backend.UserBalance(userID);
 

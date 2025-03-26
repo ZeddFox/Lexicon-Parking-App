@@ -5,16 +5,15 @@ namespace Lexicon_Parking_App
     public class Period
     {
         public int PeriodId { get; set; }
-        public int UserID { get; set; }
+        public int UserId { get; set; }
         public DateTime StartTime { get; set; }
-
         public DateTime? EndTime { get; set; }
-        public decimal Cost { get; set; } = 0m;
+        public decimal PeriodCost { get; set; } = 0m;
 
         // Create new period
         public Period(int accountid, DateTime startDate)
         {
-            UserID = accountid;
+            UserId = accountid;
             StartTime = startDate;
             EndTime = null;
             PeriodId = Backend.UniquePeriodId();
@@ -24,10 +23,10 @@ namespace Lexicon_Parking_App
         public Period(int periodid, int userid, DateTime starttime, DateTime endtime, decimal cost)
         {
             PeriodId = periodid;
-            UserID = userid;
+            UserId = userid;
             StartTime = starttime;
             EndTime = endtime;
-            Cost = cost;
+            PeriodCost = cost;
         }
 
         public void Stop()

@@ -50,7 +50,7 @@ namespace Lexicon_Parking_App
             if (currentUser != null)
             {
                 // Find active period connected to userID, If period already exists, return null
-                Period foundPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
+                Period foundPeriod = Periods.Find(period => period.UserId == userID && period.EndTime == null);
 
                 if (foundPeriod != null)
                 {
@@ -88,7 +88,7 @@ namespace Lexicon_Parking_App
             if (currentUser != null)
             {
                 // Find active period connected to userID, If period does not exist, return null
-                Period currentPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
+                Period currentPeriod = Periods.Find(period => period.UserId == userID && period.EndTime == null);
                 if (currentPeriod == null)
                 {
                     endPeriodMessage = "No active session found";
@@ -99,8 +99,11 @@ namespace Lexicon_Parking_App
                 else
                 {
                     currentPeriod.Stop();
-                    currentUser.Balance += CalculateCost(currentPeriod);
 
+                    currentPeriod.PeriodCost = CalculateCost(currentPeriod);
+                    currentUser.Balance += currentPeriod.PeriodCost;
+
+                    WriteUsersToFile(Users);
                     WritePeriodsToFile(Periods);
 
                     endPeriodMessage = "Session ended successfully";
@@ -125,7 +128,7 @@ namespace Lexicon_Parking_App
             if (tempUser != null)
             {
                 // Find period. If period does not exist, return null
-                Period? currentPeriod = Periods.Find(period => period.UserID == userID && period.EndTime == null);
+                Period? currentPeriod = Periods.Find(period => period.UserId == userID && period.EndTime == null);
                 if (currentPeriod == null)
                 {
                     currentPeriodMessage = $"No period found for {tempUser.Firstname + " " + tempUser.Lastname}";
@@ -137,6 +140,9 @@ namespace Lexicon_Parking_App
                 {
                     currentPeriodMessage = "Period obtained successfully";
                     Console.WriteLine(currentPeriodMessage);
+
+                    currentPeriod.PeriodCost = CalculateCost(currentPeriod);
+
                     return currentPeriod;
                 }
 
@@ -163,7 +169,7 @@ namespace Lexicon_Parking_App
                 // Find active periods connected to userID
                 try
                 {
-                    List<Period>? previousPeriods = Periods.Where(period => period.UserID == userID && period.EndTime != null).ToList();
+                    List<Period>? previousPeriods = Periods.Where(period => period.UserId == userID && period.EndTime != null).ToList();
 
                     previousPeriodsMessage = "Sessions listed successfully";
                     Console.WriteLine(previousPeriodsMessage);
