@@ -1,7 +1,9 @@
 1. Purpose
+   
 Control an app’s inner working through an API.
 
 2. Assignment
+   
 This is a mandatory assignment you will continue with during the
 Christmas weeks. Share a link to your code on GitHub with me on Thursday
 in the first week of 2025.
